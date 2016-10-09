@@ -1,0 +1,386 @@
+\documentclass[a4paper,9pt]{beamer}
+\usepackage[]{graphicx}
+\usepackage[]{color}
+\usepackage{alltt}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{verbatim}
+\usepackage{hyperref}
+
+\title{Computer Intensive Methods\\Presentation 1}
+\author[Jorriet,Olusoji,Orlowski,Olusoji]{Jorriet Marc\inst{1}{()}, Olusoji Oluwafemi\inst{1}{(1541893)}, \inst{1}Orlowski Robert\inst{1}{()}, Owokotomo Olajumoke Evangelina\inst{1}{()}}
+\institute[UHasselt]{\inst{1} Center for Statistics and Biostatistics, Universiteit Hasselt, Agoralaan D, 3590, Diepenbeek, Belgium.}
+\date{\today}
+
+\begin{document}
+
+<<prep, message=FALSE,warning=FALSE,echo=FALSE>>=
+library(tibble)
+library(dplyr)
+library(purrr)
+library(magrittr)
+library(knitr)
+library(fBasics)
+library(fitdistrplus)
+library(extRemes)
+library(epitools)
+knitr::opts_chunk$set(echo=F,tidy=T,external = F,message = FALSE,warning=F,fig.height = 3,fig.width = 3)
+@
+
+\frame[plain]{\maketitle}
+
+\begin{frame}{Table of Contents}
+\tableofcontents
+\end{frame}
+
+\section{Question 1}
+
+\section{Question 2}
+
+\section{Question 3}
+\subsection{Nonparametric Bootstrap Approximation}
+\begin{frame}{Exploration \& Bootstrap Algorithm (Nonparametric)}
+\begin{columns}
+\column{0.4\textwidth}
+<<explore3>>=
+data("cars")
+distance <- cars$dist
+set.seed(5)
+boot_length <- c(5000, 50000, 100000)
+n <- length(distance)
+#fitting lognormal
+#fit_lnormal <- fitdist(distance,"lnorm")
+#aic_fit_lnormal <- (-2*fit_lnormal$loglik) + (2*length(fit_lnormal$estimate))
+#fitting gamma
+#fit_gamma <- fitdist(distance,"gamma")
+#aic_fit_gamma <- (-2*fit_gamma$loglik) + (2*length(fit_gamma$estimate))
+#fitting weibull
+fit_wei <- fitdist(distance,"weibull")
+aic_fit_wei <- (-2*fit_wei$loglik) + (2*length(fit_wei$estimate))
+#random draws from a weibull with estimated parameter values
+rswei <- sort(rweibull(n,fit_wei$estimate[[1]],fit_wei$estimate[[2]]))
+denrswei <- dweibull(rswei,fit_wei$estimate[[1]],fit_wei$estimate[[2]])
+#fitting gumbel
+fit_gum <- fevd(distance,type="Gumbel",method='MLE')
+#fitting generalized extremevalue
+fit_gev <- fevd(distance,type="GEV",method='MLE')
+hist(distance,col=2,probability = T)
+lines(rswei,denrswei,col=1,lwd=2)
+#legend("topright","weibull density",lwd=2,col=1)
+@
+\column{0.6\textwidth}
+\begin{enumerate}[i]
+\item Draw $B=5000, 50000, 100000$ from the data (stopping distance) with replacement
+\item Compute statistic of interest(maximum) from each bootstrap sample(bootstrap replicates)
+\item Approximate $se(\hat{\theta})$ by the sample standard deviation of bootstrap replicates.
+\end{enumerate}
+\end{columns}
+\end{frame}
+<<nonpara3>>=
+set.seed(5)
+results3 <- list()
+for(j in 1:length(boot_length)){
+    rest <- unlist(map(1:boot_length[j],function(i){
+    draws <- sample(distance,n,replace = T)
+    max(draws)
+  }))
+  results3[[j]] <- rest
+}
+serror3 <- round(unlist(map(results3,sd)),2)
+#or
+#out <- numeric(B1)
+#for(i in 1:B1){
+#  draws <- sample(distance,n,replace = T)
+#  out[[i]] <- max(draws)
+#}
+@
+\begin{frame}{Results, Problem \& Remedies}
+
+% <<,fig.height=2,fig.width=3>>=
+% #par(mfrow=c(2,2))
+% #for(i in seq_along(results3)){
+% hist(results3[[1]],main=paste(boot_length[1],'replicates',sep=' '),xlab=expression(theta^'*'))
+% #}
+% @
+
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{table}[h]
+\begin{tabular}{cccc}
+\hline
+Replicates & 5000 & 50000 & 100000\\ 
+\hline
+SError & \Sexpr{serror3[1]} & \Sexpr{serror3[2]} & \Sexpr{serror3[3]}\\
+\hline
+\end{tabular}
+\caption{Standard Error estimates}
+\end{table}
+\end{block}
+\column{0.5\textwidth}
+\begin{block}{Problems and Remedy}
+\begin{itemize}
+\item Discrete not continuous distribution observed (\alert{see Appendix graph})
+\item Poor approximation of the distribution of maximum (\alert{Bickel, Gotze, and van Zwet (1997)})
+\item Remedy includes m out of n bootstrapp (\alert{Bickel, Gotze, and van Zwet (1997)}) and Semiparametric bootstrapp (\alert{Zelterman (1993)}).
+\end{itemize}
+\end{block}
+\end{columns}
+\end{frame}
+
+\subsection{Parametric Bootstrap}
+\begin{frame}{Bootstrap Algorithm (Parametric)}
+\begin{columns}
+\column{0.4\textwidth}
+Candidate distributions based on extreme value theories include;
+\begin{enumerate}[i]
+\item Gumbel
+\item Weibull
+\item Generalized extreme value distribution (GEV)
+\end{enumerate}
+
+\column{0.6\textwidth}
+\begin{enumerate}[i]
+\item Draw $B=5000, 50000, 100000$ from a \alert{distribution that best summarizes(weibull)} the data with parameters replaced with their plugin estimates
+\item Compute statistic of interest(maximum) from each bootstrap sample(bootstrap replicates)
+\item Approximate $se(\hat{\theta})$ by the sample standard deviation of bootstrap replicates.
+\end{enumerate}
+\end{columns}
+
+\alert{Question of the best distribution to assume}
+\begin{table}[h]
+\begin{tabular}{cccc}
+\hline
+& Gumbel & \alert{Weibull} & GEV\\
+\hline
+AIC & 462.72 & \alert{461.47} & 464.72\\
+\hline
+\end{tabular}
+\caption{AIC values of Candidate distributions}
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Results \& Comarison}
+<<parametric3>>=
+set.seed(500)
+results32 <- list()
+for(j in 1:length(boot_length)){
+    rest <- unlist(map(1:boot_length[j],function(i){
+    draws <- rweibull(n,fit_wei$estimate[[1]],fit_wei$estimate[[2]])
+    max(draws)
+  }))
+  results32[[j]] <- rest
+}
+serror32 <- round(unlist(map(results32,sd)),2)
+@
+
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{table}[h]
+\begin{tabular}{cccc}
+\hline
+Replicates & 5000 & 50000 & 100000\\ 
+\hline
+SError & \Sexpr{serror32[1]} & \Sexpr{serror32[2]} & \Sexpr{serror32[3]}\\
+\hline
+\end{tabular}
+\caption{Standard Error estimates}
+\end{table}
+\end{block}
+
+\column{0.5\textwidth}
+\begin{block}{Comparison \& Discussions}
+\begin{enumerate}[i]
+\item Better approximation of the distribution of the maximum (\alert{See graph in appendix})
+\item Continuous and not discrete distribution observed.
+\end{enumerate}
+\end{block}
+\end{columns}
+\end{frame}
+
+\subsection{Probability of High Risk Stopping Distance}
+\begin{frame}{Bootstrap Algorithm (Non-Parametric) \& Results}
+<<probability>>=
+set.seed(5)
+results33 <- list()
+for(j in 1:length(boot_length)){
+    rest <- unlist(map(1:boot_length[j],function(i){
+    draws <- sample(distance,n,replace = T)
+    sum(draws>65)/n
+  }))
+  results33[[j]] <- rest
+}
+prob33 <- round(unlist(map(results33,mean)),2)
+@
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Algorithm}
+\begin{enumerate}[i]
+ \item Draw $B=5000, 50000, 100000$ from the data (stopping distance) with replacement
+ \item Compute probability of interest $P(distance > 65ft) = \frac{\#(distance > 65)}{n}$ from each bootstrap sample (bootstrap replicates)
+ \item Approximate $P(distance > 65ft)$ by the mean of bootstrap replicates.
+ \end{enumerate}
+ \end{block}
+ 
+ \column{0.5\textwidth}
+ \begin{block}{Results}
+ \begin{table}[h]
+\begin{tabular}{cccc}
+\hline
+Replicates & 5000 & 50000 & 100000\\ 
+\hline
+Prob. & \Sexpr{prob33[1]} & \Sexpr{prob33[2]} & \Sexpr{prob33[3]}\\
+\hline
+\end{tabular}
+\caption{Standard Error estimates}
+\end{table}
+
+ \end{block}
+\end{columns}
+\end{frame}
+
+
+\section{Question 4}
+\subsection{Computing Odds Ratio}
+<<odds>>=
+resp<-as.factor(c(rep(0,189),rep(1,10845),rep(0,104),rep(1 ,10933)))
+trt<-as.factor(c(rep(1,189),rep(1,10845),rep(2,104),rep(2,10933)))
+Aspirin.L <- tibble(trt,resp)
+Aspirin.1<-table(trt,resp)
+#Aspirin.1
+row.names(Aspirin.1)=c("Placebo","Aspirin")
+colnames(Aspirin.1) <- c("Yes","No")
+oddsr <- round(oddsratio(Aspirin.1,method = 'wald')$measure[2,],2)
+seoddsr <- sqrt(sum(1/Aspirin.1))
+@
+\begin{frame}{Odds Ratio and Confidence Interval}
+\begin{columns}
+\column{0.5\textwidth}
+<<oddsplot>>=
+plot(Aspirin.1,col=heat.colors(2),xlab='Treatment',ylab='Heart Disease')
+@
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{enumerate}[i]
+\item Observation unit are
+\item Odds ratio is \Sexpr{oddsr[1]}(\Sexpr{oddsr[2]},\Sexpr{oddsr[3]})
+\item The odds of.....
+\end{enumerate}
+\end{block}
+\end{columns}
+\end{frame}
+
+\subsection{Bootstrap Approach}
+<<oddsbootstrapt,cache=TRUE>>=
+set.seed(5)
+n4 <- length(Aspirin.L$trt)
+results41 <- list()
+#bootstrap algorithm
+for(j in 1:(length(boot_length)-1)){
+    rest <- map(1:boot_length[j],function(i){
+    draws <- sample(1:n4,n4,replace = T)
+    data_draws <- Aspirin.L %>% slice(draws)
+    tab_data_draws <- table(data_draws)
+    or_draws <- (tab_data_draws[1,1]*tab_data_draws[2,2])/(tab_data_draws[1,2]*tab_data_draws[2,1])
+    log_or_draws <- log(or_draws)
+    se_draws <- sqrt(sum(1/tab_data_draws))
+    z_draws <- (mean(log_or_draws) - log(oddsr[[1]]))/se_draws
+    return(list(or_star=or_draws,logor_star=log_or_draws,z_star=z_draws))
+  })
+  results41[[j]] <- rest
+}
+#separating the 5000 from 50000 replicates
+list5000 <- results41[[1]]
+list50000 <- results41[[2]]
+#orstar and zstar for 5000 replicates
+orstar5000 <- unlist(map(1:length(list5000),function(i){
+  list5000[[i]]$or_star
+}))
+#
+zstar5000 <- unlist(map(1:length(list5000),function(i){
+  list5000[[i]]$z_star
+}))
+#orstar and zstar for 50000 replicates
+orstar50000 <- unlist(map(1:length(list50000),function(i){
+  list50000[[i]]$or_star
+}))
+#
+zstar50000 <- unlist(map(1:length(list50000),function(i){
+  list50000[[i]]$z_star
+}))
+#confidence interval and quantiles for 5000 replicates
+q5000 <- round(quantile(zstar5000,c(0.025,0.975)),2)
+ci5000 <- round(oddsr[1] + (q5000*seoddsr),2)
+#confidence interval and quantiles for 50000 replicates
+q50000 <- round(quantile(zstar50000,c(0.025,0.975)),2)
+ci50000 <- round(oddsr[1] + (q50000*seoddsr),2)
+@
+
+\begin{frame}{Bootstrap Algorithm and Results}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Bootstrap t Algorithm}
+\begin{enumerate}[i]
+\item Draw B = 5000 and 50000 bootstrap samples from the data and compute $Z^* = \frac{\hat{\theta^*} - \hat{\theta}}{\hat{se(\theta^*)}}$, where $\hat{\theta^*}$ is the bootstrap log-odds and $\hat{se(\theta^*)}$ is the corresponding bootstrap standard error.
+\item \alert{Note that pairs are sampled}
+\item obtain quantiles of the replicate $Z^*$
+\item Compute $(\hat{\theta} + \hat{t}_{1-\alpha}se(\hat{\theta}),\hat{\theta} + \hat{t}_{\alpha}\hat{se(\theta)})$, where $\hat{\theta}$ is the estimated odds ratio and $se(\hat{\theta})$ is the estimated standard error of the odds ratio.
+\end{enumerate}
+\end{block}
+
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{table}[h]
+\begin{tabular}{ccc}
+\hline
+Replicates & 5000 & 50000\\
+\hline
+Quantiles & \Sexpr{q5000[1]},\Sexpr{q5000[2]} & \Sexpr{q50000[1]},\Sexpr{q50000[2]}\\
+CI & \Sexpr{ci5000[1]},\Sexpr{ci5000[2]} & \Sexpr{ci50000[1]},\Sexpr{ci50000[2]}\\
+\hline
+\end{tabular}
+\caption{Bootstrap Quantiles}
+\end{table}
+\end{block}
+\end{columns}
+\end{frame}
+
+\section{Appendix}
+\begin{frame}{Distribution of Bootstrap Replicates (Non Parametric)}
+<<plots3, fig.height=5,fig.width=7>>=
+par(mfrow=c(2,2))
+for(i in seq_along(results3)){
+  hist(results3[[i]],main=paste(boot_length[i],'replicates',sep=' '),xlab=expression(theta^'*'))
+}
+@
+\end{frame}
+
+\begin{frame}{Distribution of Bootstrap Replicates (Parametric)}
+<<plots32, fig.height=5,fig.width=7>>=
+par(mfrow=c(2,2))
+for(i in seq_along(results32)){
+  hist(results32[[i]],main=paste(boot_length[i],'replicates',sep=' '),xlab=expression(theta^'*'))
+}
+@
+\end{frame}
+
+\begin{frame}{Distribution of Bootstrap Replicates (Probability)}
+<<plots33, fig.height=5,fig.width=7>>=
+par(mfrow=c(2,2))
+for(i in seq_along(results33)){
+  hist(results33[[i]],main=paste(boot_length[i],'replicates',sep=' '),xlab=expression(theta^'*'))
+}
+@
+\end{frame}
+
+<<plots41, fig.height=5,fig.width=7>>=
+par(mfrow=c(2,2))
+hist(orstar5000,xlab=expression(theta^'*'),main='5000 replicates')
+hist(orstar50000,xlab=expression(theta^'*'),main='50000 replicates')
+@
+
+
+\end{document}

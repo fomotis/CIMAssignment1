@@ -1,0 +1,17 @@
+base
+knitr
+tibble
+dplyr
+purrr
+magrittr
+timeDate
+timeSeries
+fBasics
+MASS
+survival
+fitdistrplus
+Lmoments
+distillery
+car
+extRemes
+epitools
