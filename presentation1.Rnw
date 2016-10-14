@@ -9,7 +9,7 @@
 \usepackage{hyperref}
 
 \title{Computer Intensive Methods\\Presentation 1}
-\author[Jorriet,Olusoji,Orlowski,Olusoji]{Jorriet Marc\inst{1}{()}, Olusoji Oluwafemi\inst{1}{(1541893)}, \inst{1}Orlowski Robert\inst{1}{()}, Owokotomo Olajumoke Evangelina\inst{1}{()}}
+\author[Jorriet,Olusoji,Orlowski,Olusoji]{Jorriet Marc\inst{1}{()}, Olusoji Oluwafemi\inst{1}{(1541893)}, \inst{1}Orlowski Robert\inst{1}{(1541889)}, Owokotomo Olajumoke Evangelina\inst{1}{(1539654)}}
 \institute[UHasselt]{\inst{1} Center for Statistics and Biostatistics, Universiteit Hasselt, Agoralaan D, 3590, Diepenbeek, Belgium.}
 \date{\today}
 
@@ -34,9 +34,9 @@ knitr::opts_chunk$set(echo=F,tidy=T,external = F,message = FALSE,warning=F,fig.h
 \tableofcontents
 \end{frame}
 
-\section{Question 1}
+%\section{Question 1}
 
-\section{Question 2}
+%\section{Question 2}
 
 \section{Question 3}
 \subsection{Nonparametric Bootstrap Approximation}
@@ -122,7 +122,7 @@ SError & \Sexpr{serror3[1]} & \Sexpr{serror3[2]} & \Sexpr{serror3[3]}\\
 \begin{block}{Problems and Remedy}
 \begin{itemize}
 \item Discrete not continuous distribution observed (\alert{see Appendix graph})
-\item Poor approximation of the distribution of maximum (\alert{Bickel, Gotze, and van Zwet (1997)})
+\item Poor approximation of the distribution of maximum (\alert{Bickel, Gotze, and van Zwet (1997)}) but standard error still appropriately computed.
 \item Remedy includes m out of n bootstrapp (\alert{Bickel, Gotze, and van Zwet (1997)}) and Semiparametric bootstrapp (\alert{Zelterman (1993)}).
 \end{itemize}
 \end{block}
@@ -142,7 +142,7 @@ Candidate distributions based on extreme value theories include;
 
 \column{0.6\textwidth}
 \begin{enumerate}[i]
-\item Draw $B=5000, 50000, 100000$ from a \alert{distribution that best summarizes(weibull)} the data with parameters replaced with their plugin estimates
+\item Draw $B=5000, 50000, 100000$ from a \alert{distribution that best summarizes(weibull)} the data with parameters replaced with their plugin estimates(\Sexpr{fit_wei$estimate})
 \item Compute statistic of interest(maximum) from each bootstrap sample(bootstrap replicates)
 \item Approximate $se(\hat{\theta})$ by the sample standard deviation of bootstrap replicates.
 \end{enumerate}
@@ -194,8 +194,9 @@ SError & \Sexpr{serror32[1]} & \Sexpr{serror32[2]} & \Sexpr{serror32[3]}\\
 \column{0.5\textwidth}
 \begin{block}{Comparison \& Discussions}
 \begin{enumerate}[i]
-\item Better approximation of the distribution of the maximum (\alert{See graph in appendix})
 \item Continuous and not discrete distribution observed.
+\item Standard error computed larger than that of the semi-parametric bootstrapp.
+\item This is partly because of the distribution used.
 \end{enumerate}
 \end{block}
 \end{columns}
@@ -313,10 +314,12 @@ zstar50000 <- unlist(map(1:length(list50000),function(i){
 }))
 #confidence interval and quantiles for 5000 replicates
 q5000 <- round(quantile(zstar5000,c(0.025,0.975)),2)
-ci5000 <- round(oddsr[1] + (q5000*seoddsr),2)
+ci5000 <- round(exp(log(oddsr[1]) + (q5000*seoddsr)),2)
+c5000 <-  1 - ((sum(zstar5000 < quantile(zstar5000,0.025)) + sum(zstar5000 > quantile(zstar5000,0.975)))/length(zstar5000))
 #confidence interval and quantiles for 50000 replicates
 q50000 <- round(quantile(zstar50000,c(0.025,0.975)),2)
-ci50000 <- round(oddsr[1] + (q50000*seoddsr),2)
+ci50000 <- round(exp(log(oddsr[1]) + (q50000*seoddsr)),2)
+c50000 <-  1 - ((sum(zstar50000 < quantile(zstar50000,0.025)) + sum(zstar50000 > quantile(zstar50000,0.975)))/length(zstar50000))
 @
 
 \begin{frame}{Bootstrap Algorithm and Results}
@@ -327,7 +330,7 @@ ci50000 <- round(oddsr[1] + (q50000*seoddsr),2)
 \item Draw B = 5000 and 50000 bootstrap samples from the data and compute $Z^* = \frac{\hat{\theta^*} - \hat{\theta}}{\hat{se(\theta^*)}}$, where $\hat{\theta^*}$ is the bootstrap log-odds and $\hat{se(\theta^*)}$ is the corresponding bootstrap standard error.
 \item \alert{Note that pairs are sampled}
 \item obtain quantiles of the replicate $Z^*$
-\item Compute $(\hat{\theta} + \hat{t}_{1-\alpha}se(\hat{\theta}),\hat{\theta} + \hat{t}_{\alpha}\hat{se(\theta)})$, where $\hat{\theta}$ is the estimated odds ratio and $se(\hat{\theta})$ is the estimated standard error of the odds ratio.
+\item Compute $(\hat{\theta} - \hat{t}_{1-\alpha}se(\hat{\theta}),\hat{\theta} + \hat{t}_{\alpha}\hat{se(\theta)})$, where $\hat{\theta}$ is the estimated log odds ratio and $se(\hat{\theta})$ is the estimated standard error of the odds ratio.
 \end{enumerate}
 \end{block}
 
@@ -340,9 +343,63 @@ Replicates & 5000 & 50000\\
 \hline
 Quantiles & \Sexpr{q5000[1]},\Sexpr{q5000[2]} & \Sexpr{q50000[1]},\Sexpr{q50000[2]}\\
 CI & \Sexpr{ci5000[1]},\Sexpr{ci5000[2]} & \Sexpr{ci50000[1]},\Sexpr{ci50000[2]}\\
+Coverage & \Sexpr{c5000} & \Sexpr{c50000}\\
 \hline
 \end{tabular}
-\caption{Bootstrap Quantiles}
+\caption{Bootstrap Quantiles and Confidence Intervals}
+\end{table}
+\alert{Note that this version of bootstrap is not transformation invariant. Hence building confidence interval for the log-odds without transforming is a better option.}
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Percental Interval(PI)}
+<<oddsbootstrappi,cache=T>>=
+set.seed(5)
+results42 <- list()
+#bootstrap percentile confidence interval algorithm
+for(j in 1:(length(boot_length)-1)){
+    rest <- unlist(map(1:boot_length[j],function(i){
+    draws <- sample(1:n4,n4,replace = T)
+    data_draws <- Aspirin.L %>% slice(draws)
+    tab_data_draws <- table(data_draws)
+    or_draws <- (tab_data_draws[1,1]*tab_data_draws[2,2])/(tab_data_draws[1,2]*tab_data_draws[2,1])
+    #log_or_draws <- log(or_draws)
+    #se_draws <- sqrt(sum(1/tab_data_draws))
+    #z_draws <- (mean(log_or_draws) - log(oddsr[[1]]))/se_draws
+    #return(list(or_star=or_draws,logor_star=log_or_draws,z_star=z_draws))
+  }))
+  results42[[j]] <- rest
+}
+pi5000 <- round(quantile(results42[[1]],c(0.025,0.975)),2)
+pi50000 <- round(quantile(results42[[2]],c(0.025,0.975)),2)
+#coverage
+coverage5000 <- 1 - ((sum(results42[[1]] < quantile(results42[[1]],0.025)) + sum(results42[[1]] > quantile(results42[[1]],0.975)))/length(results42[[1]]))
+coverage50000 <- 1 - ((sum(results42[[2]] < quantile(results42[[2]],0.025)) + sum(results42[[2]] > quantile(results42[[2]],0.975)))/length(results42[[2]]))
+@
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Percentile Interval Algorithm}
+\begin{enumerate}[i]
+\item Draw B = 5000 and 50000 bootstrap samples from the data with replacement
+\item Compute bootstrap replicates (odds ratio).
+\item obtain quantiles of the replicates.
+\end{enumerate}
+
+\end{block}
+
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{table}[h]
+\begin{tabular}{ccc}
+\hline
+Replicates & 5000 & 50000\\
+\hline
+CI & \Sexpr{pi5000[1]},\Sexpr{pi5000[2]} & \Sexpr{pi50000[1]},\Sexpr{pi50000[2]}\\
+Coverage & \Sexpr{coverage5000} & \Sexpr{coverage50000}\\
+\hline
+\end{tabular}
+\caption{Confidence Intervals}
 \end{table}
 \end{block}
 \end{columns}
@@ -376,11 +433,14 @@ for(i in seq_along(results33)){
 @
 \end{frame}
 
+\begin{frame}{Distribution of Bootstrap Replicates (Odds Ratio)}
 <<plots41, fig.height=5,fig.width=7>>=
 par(mfrow=c(2,2))
 hist(orstar5000,xlab=expression(theta^'*'),main='5000 replicates')
+#abline(v=quantile(orstar5000),c(0.025,0.975))
 hist(orstar50000,xlab=expression(theta^'*'),main='50000 replicates')
+#abline(v=quantile(orstar50000),c(0.025,0.975))
 @
-
+\end{frame}
 
 \end{document}

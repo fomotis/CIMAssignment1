@@ -59,7 +59,7 @@
 \usepackage{hyperref}
 
 \title{Computer Intensive Methods\\Presentation 1}
-\author[Jorriet,Olusoji,Orlowski,Olusoji]{Jorriet Marc\inst{1}{()}, Olusoji Oluwafemi\inst{1}{(1541893)}, \inst{1}Orlowski Robert\inst{1}{()}, Owokotomo Olajumoke Evangelina\inst{1}{()}}
+\author[Jorriet,Olusoji,Orlowski,Olusoji]{Jorriet Marc\inst{1}{()}, Olusoji Oluwafemi\inst{1}{(1541893)}, \inst{1}Orlowski Robert\inst{1}{(1541889)}, Owokotomo Olajumoke Evangelina\inst{1}{(1539654)}}
 \institute[UHasselt]{\inst{1} Center for Statistics and Biostatistics, Universiteit Hasselt, Agoralaan D, 3590, Diepenbeek, Belgium.}
 \date{\today}
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
@@ -73,9 +73,9 @@
 \tableofcontents
 \end{frame}
 
-\section{Question 1}
+%\section{Question 1}
 
-\section{Question 2}
+%\section{Question 2}
 
 \section{Question 3}
 \subsection{Nonparametric Bootstrap Approximation}
@@ -123,7 +123,7 @@ SError & 13.75 & 13.74 & 13.77\\
 \begin{block}{Problems and Remedy}
 \begin{itemize}
 \item Discrete not continuous distribution observed (\alert{see Appendix graph})
-\item Poor approximation of the distribution of maximum (\alert{Bickel, Gotze, and van Zwet (1997)})
+\item Poor approximation of the distribution of maximum (\alert{Bickel, Gotze, and van Zwet (1997)}) but standard error still appropriately computed.
 \item Remedy includes m out of n bootstrapp (\alert{Bickel, Gotze, and van Zwet (1997)}) and Semiparametric bootstrapp (\alert{Zelterman (1993)}).
 \end{itemize}
 \end{block}
@@ -143,7 +143,7 @@ Candidate distributions based on extreme value theories include;
 
 \column{0.6\textwidth}
 \begin{enumerate}[i]
-\item Draw $B=5000, 50000, 100000$ from a \alert{distribution that best summarizes(weibull)} the data with parameters replaced with their plugin estimates
+\item Draw $B=5000, 50000, 100000$ from a \alert{distribution that best summarizes(weibull)} the data with parameters replaced with their plugin estimates(1.7239251, 48.1481931)
 \item Compute statistic of interest(maximum) from each bootstrap sample(bootstrap replicates)
 \item Approximate $se(\hat{\theta})$ by the sample standard deviation of bootstrap replicates.
 \end{enumerate}
@@ -184,8 +184,9 @@ SError & 17.9 & 18.25 & 18.24\\
 \column{0.5\textwidth}
 \begin{block}{Comparison \& Discussions}
 \begin{enumerate}[i]
-\item Better approximation of the distribution of the maximum (\alert{See graph in appendix})
 \item Continuous and not discrete distribution observed.
+\item Standard error computed larger than that of the semi-parametric bootstrapp.
+\item This is partly because of the distribution used.
 \end{enumerate}
 \end{block}
 \end{columns}
@@ -255,7 +256,7 @@ Prob. & 0.2 & 0.2 & 0.2\\
 \item Draw B = 5000 and 50000 bootstrap samples from the data and compute $Z^* = \frac{\hat{\theta^*} - \hat{\theta}}{\hat{se(\theta^*)}}$, where $\hat{\theta^*}$ is the bootstrap log-odds and $\hat{se(\theta^*)}$ is the corresponding bootstrap standard error.
 \item \alert{Note that pairs are sampled}
 \item obtain quantiles of the replicate $Z^*$
-\item Compute $(\hat{\theta} + \hat{t}_{1-\alpha}se(\hat{\theta}),\hat{\theta} + \hat{t}_{\alpha}\hat{se(\theta)})$, where $\hat{\theta}$ is the estimated odds ratio and $se(\hat{\theta})$ is the estimated standard error of the odds ratio.
+\item Compute $(\hat{\theta} - \hat{t}_{1-\alpha}se(\hat{\theta}),\hat{\theta} + \hat{t}_{\alpha}\hat{se(\theta)})$, where $\hat{\theta}$ is the estimated log odds ratio and $se(\hat{\theta})$ is the estimated standard error of the odds ratio.
 \end{enumerate}
 \end{block}
 
@@ -267,10 +268,42 @@ Prob. & 0.2 & 0.2 & 0.2\\
 Replicates & 5000 & 50000\\
 \hline
 Quantiles & \ensuremath{-2.01},1.99 & \ensuremath{-1.97},1.93\\
-CI & 1.58,2.07 & 1.59,2.07\\
+CI & 1.43,2.34 & 1.44,2.32\\
+Coverage & 0.95 & 0.95\\
 \hline
 \end{tabular}
-\caption{Bootstrap Quantiles}
+\caption{Bootstrap Quantiles and Confidence Intervals}
+\end{table}
+\alert{Note that this version of bootstrap is not transformation invariant. Hence building confidence interval for the log-odds without transforming is a better option.}
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Percental Interval(PI)}
+
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{Percentile Interval Algorithm}
+\begin{enumerate}[i]
+\item Draw B = 5000 and 50000 bootstrap samples from the data with replacement
+\item Compute bootstrap replicates (odds ratio).
+\item obtain quantiles of the replicates.
+\end{enumerate}
+
+\end{block}
+
+\column{0.5\textwidth}
+\begin{block}{Results}
+\begin{table}[h]
+\begin{tabular}{ccc}
+\hline
+Replicates & 5000 & 50000\\
+\hline
+CI & 1.43,2.37 & 1.45,2.34\\
+Coverage & 0.95 & 0.95\\
+\hline
+\end{tabular}
+\caption{Confidence Intervals}
 \end{table}
 \end{block}
 \end{columns}
@@ -301,14 +334,12 @@ CI & 1.58,2.07 & 1.59,2.07\\
 \end{knitrout}
 \end{frame}
 
+\begin{frame}{Distribution of Bootstrap Replicates (Odds Ratio)}
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/plots41-1} 
 
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.new(): figure margins too large}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.new(): figure margins too large}}\end{kframe}
 \end{knitrout}
-
+\end{frame}
 
 \end{document}
